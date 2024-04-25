@@ -40,37 +40,57 @@ export const updateTmrTasks = createAsyncThunk(
 
 export const setTaskStatus = createAsyncThunk(
   'task/setTaskStatus',
-  async (payload, thunkAPI) => {
-    const { taskId, tasks } = payload;
-    const newListTasks = tasks.concat();
-    const selectedTask = tasks.find(task => task.id === taskId);
-    const index = newListTasks.findIndex(task => task.id === taskId);
-    newListTasks[index] = {
-      id: selectedTask.id,
-      name: selectedTask.name,
-      time: selectedTask.time,
-      isDone: !selectedTask.isDone,
-    };
-    await _storeTask(newListTasks);
-    return newListTasks;
+  async (payload, { getState }) => {
+    const { taskId, isToday } = payload;
+    let newListTasks = [];
+    if (isToday) {
+      const tasks = getState().tasks.listTasks;
+      newListTasks = tasks.concat();
+      const selectedTask = tasks.find(task => task.id === taskId);
+      const index = newListTasks.findIndex(task => task.id === taskId);
+      newListTasks[index] = {
+        id: selectedTask.id,
+        name: selectedTask.name,
+        time: selectedTask.time,
+        isDone: !selectedTask.isDone,
+      };
+      await _storeTask(newListTasks);
+    } else {
+      const tasks = getState().tasks.listTmrTasks;
+      newListTasks = tasks.concat();
+      const selectedTask = tasks.find(task => task.id === taskId);
+      const index = newListTasks.findIndex(task => task.id === taskId);
+      newListTasks[index] = {
+        id: selectedTask.id,
+        name: selectedTask.name,
+        time: selectedTask.time,
+        isDone: !selectedTask.isDone,
+      };
+      await _storeTomorrowTask(newListTasks);
+    }
+    return { newListTasks, isToday };
   }
 );
 
-export const setTmrTaskStatus = createAsyncThunk(
-  'task/setTmrTaskStatus',
-  async (payload, thunkAPI) => {
-    const { taskId, tmrTasks } = payload;
-    const newListTasks = tmrTasks.concat();
-    const selectedTask = tmrTasks.find(task => task.id === taskId);
-    const index = newListTasks.findIndex(task => task.id === taskId);
-    newListTasks[index] = {
-      id: selectedTask.id,
-      name: selectedTask.name,
-      time: selectedTask.time,
-      isDone: !selectedTask.isDone,
-    };
-    await _storeTomorrowTask(newListTasks);
-    return newListTasks;
+export const editTask = createAsyncThunk(
+  'tasks/editTask',
+  async (payload, { getState }) => {
+    const { editedTask, isToday } = payload;
+    let newListTasks = [];
+    if (isToday) {
+      const tasks = getState().tasks.listTasks;
+      newListTasks = tasks.concat();
+      const index = newListTasks.findIndex(task => task.id === editedTask.id);
+      newListTasks[index] = editedTask;
+      await _storeTask(newListTasks);
+    } else {
+      const tasks = getState().tasks.listTmrTasks;
+      newListTasks = tasks.concat();
+      const index = newListTasks.findIndex(task => task.id === editedTask.id);
+      newListTasks[index] = editedTask;
+      await _storeTomorrowTask(newListTasks);
+    }
+    return { newListTasks, isToday };
   }
 );
 
@@ -115,7 +135,11 @@ const tasksSlice = createSlice({
         console.log('err', action);
       })
       .addCase(setTaskStatus.fulfilled, (state, action) => {
-        state.listTasks = action.payload;
+        if (action.payload.isToday) {
+          state.listTasks = action.payload.newListTasks;
+        } else {
+          state.listTmrTasks = action.payload.newListTasks;
+        }
       })
       .addCase(setTaskStatus.rejected, (state, action) => {
         console.log('err', action);
@@ -134,11 +158,13 @@ const tasksSlice = createSlice({
       .addCase(updateTmrTasks.rejected, (state, action) => {
         console.log('err', action);
       })
-      .addCase(setTmrTaskStatus.fulfilled, (state, action) => {
-        state.listTmrTasks = action.payload;
+      .addCase(editTask.fulfilled, (state, action) => {
+        if (action.payload.isToday)
+          state.listTasks = action.payload.newListTasks;
+        else state.listTmrTasks = action.payload.newListTasks;
       })
-      .addCase(setTmrTaskStatus.rejected, (state, action) => {
-        console.log('err', action);
+      .addCase(editTask.rejected, (state, action) => {
+        console.log('err', action.error.message);
       });
   },
 });
@@ -146,8 +172,3 @@ const tasksSlice = createSlice({
 export const { addTask, markDone } = tasksSlice.actions;
 
 export default tasksSlice.reducer;
-
-export const selectAllTasks = state => state.tasks.listTasks;
-
-export const selectTaskById = (state, taskId) =>
-  state.tasks.find(task => task.id === taskId);

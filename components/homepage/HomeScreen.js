@@ -42,30 +42,30 @@ const HomeScreen = ({ navigation }) => {
   const tmrTasks = useSelector(tmrTasksSelector);
 
   const markDoneTask = taskId => {
-    dispatch(setTaskStatus({ taskId, tasks }));
+    dispatch(setTaskStatus({ taskId, isToday: true }));
   };
 
   const markDoneTmrTask = taskId => {
-    dispatch(setTmrTaskStatus({ taskId, tmrTasks }));
+    dispatch(setTaskStatus({ taskId, isToday: false }));
   };
 
-  const _handleTask = id => {
+  const handleClickTask = id => {
     navigation.navigate('EditTask', {
       taskId: id,
     });
   };
 
-  const _handleTmrTask = id => {
+  const handleClickTmrTask = id => {
     navigation.navigate('EditTmrTask', {
       taskId: id,
     });
   };
 
-  const _handlePressAddTask = () => {
+  const handlePressAddTask = () => {
     navigation.navigate('AddTask');
   };
 
-  const _handlePressAddTmrTask = () => {
+  const handlePressAddTmrTask = () => {
     navigation.navigate('AddTmrTask');
   };
 
@@ -90,7 +90,7 @@ const HomeScreen = ({ navigation }) => {
           onPress={() => markDoneTask(task.id)}
         />
       )}
-      onPress={() => _handleTask(task.id)}
+      onPress={() => handleClickTask(task.id)}
     />
   ));
 
@@ -110,7 +110,7 @@ const HomeScreen = ({ navigation }) => {
           onPress={() => markDoneTmrTask(task.id)}
         />
       )}
-      onPress={() => _handleTmrTask(task.id)}
+      onPress={() => handleClickTmrTask(task.id)}
     />
   ));
   return (
@@ -125,7 +125,7 @@ const HomeScreen = ({ navigation }) => {
             <PlusCircleIcon
               color={colors.orange}
               size="45"
-              onPress={_handlePressAddTask}
+              onPress={handlePressAddTask}
             ></PlusCircleIcon>
           </TouchableOpacity>
         </View>
@@ -138,7 +138,7 @@ const HomeScreen = ({ navigation }) => {
             <PlusCircleIcon
               color={colors.orange}
               size="45"
-              onPress={_handlePressAddTmrTask}
+              onPress={handlePressAddTmrTask}
             ></PlusCircleIcon>
           </TouchableOpacity>
         </View>
