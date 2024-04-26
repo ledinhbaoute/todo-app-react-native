@@ -1,9 +1,8 @@
 import * as React from 'react';
 import { Text } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
-import { createSelector } from '@reduxjs/toolkit';
 import { View, TextInput, TouchableOpacity } from 'react-native';
-import { editTask } from '../../redux/TasksSlice';
+import { editTask, tasksSelector } from '../../redux/TasksSlice';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeftIcon, PlusCircleIcon } from 'react-native-heroicons/solid';
 import { colors } from '../../theme/colors';
@@ -14,13 +13,6 @@ const EditTask = ({ route, navigation }) => {
 
   const dispatch = useDispatch();
 
-  const tasksSelector = createSelector(
-    state => state.tasks,
-    tasks => {
-      return tasks.listTasks;
-    }
-  );
-
   const tasks = useSelector(tasksSelector);
 
   const selectedTask = tasks.find(task => task.id === taskId);
@@ -29,7 +21,7 @@ const EditTask = ({ route, navigation }) => {
   const [time, setTime] = React.useState(new Date(selectedTask.time));
   const [note, setNote] = React.useState(selectedTask.note);
 
-  const _handleEditTask = () => {
+  const handleEditTask = () => {
     if (taskName && time) {
       const editedTask = {
         id: selectedTask.id,
@@ -38,14 +30,12 @@ const EditTask = ({ route, navigation }) => {
         note: note,
         isDone: false,
       };
-      dispatch(editTask({ editedTask, isToday: true }));
-      setTaskName('');
-      setTime(new Date());
+      dispatch(editTask({ editedTask }));
       navigation.navigate('HomeScreen');
     }
   };
 
-  const _handleTimeChange = newTime => {
+  const handleTimeChange = newTime => {
     setTime(newTime);
   };
 
@@ -73,7 +63,7 @@ const EditTask = ({ route, navigation }) => {
           </View>
           <Text className="mt-4">Time</Text>
           <View className="mt-4 w-full h-1/4">
-            <TimePicker time={time} onTimeChange={_handleTimeChange} />
+            <TimePicker time={time} onTimeChange={handleTimeChange} />
           </View>
           <Text className="mt-4">Note</Text>
           <View className="mt-4 bg-black w-full">
@@ -88,7 +78,7 @@ const EditTask = ({ route, navigation }) => {
               <PlusCircleIcon
                 color={colors.orange}
                 size="70"
-                onPress={_handleEditTask}
+                onPress={handleEditTask}
               ></PlusCircleIcon>
             </TouchableOpacity>
           </View>
@@ -96,14 +86,6 @@ const EditTask = ({ route, navigation }) => {
       </View>
     </SafeAreaView>
   );
-};
-
-const styles = {
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 };
 
 export default EditTask;
