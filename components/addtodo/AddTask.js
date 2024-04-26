@@ -2,31 +2,28 @@ import * as React from 'react';
 import { Text } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import { View, TextInput, TouchableOpacity } from 'react-native';
-import { nanoid, createSelector } from '@reduxjs/toolkit';
-import { updateTasks } from '../../redux/TasksSlice';
+import { nanoid } from '@reduxjs/toolkit';
+import { updateTasks, tasksSelector } from '../../redux/TasksSlice';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeftIcon } from 'react-native-heroicons/solid';
 import { colors } from '../../theme/colors';
+import { tomorrow } from '../../helper/TimeFormat';
 import TimePicker from '../TimePicker';
 import { PlusCircleIcon } from 'react-native-heroicons/solid';
 
-const AddTask = ({ navigation }) => {
+const AddTask = ({ route, navigation }) => {
+  const { day } = route.params;
   const [taskName, setTaskName] = React.useState('');
-  const [time, setTime] = React.useState(new Date());
+  const [time, setTime] = React.useState(
+    day === 'today' ? new Date() : tomorrow()
+  );
   const [note, setNote] = React.useState('');
 
   const dispatch = useDispatch();
 
-  const tasksSelector = createSelector(
-    state => state.tasks,
-    tasks => {
-      return tasks.listTasks;
-    }
-  );
-
   const tasks = useSelector(tasksSelector);
 
-  const _handleAddTask = () => {
+  const handleAddTask = () => {
     if (taskName && time) {
       const newListTasks = tasks.concat({
         id: nanoid(),
@@ -36,13 +33,11 @@ const AddTask = ({ navigation }) => {
         isDone: false,
       });
       dispatch(updateTasks(newListTasks));
-      setTaskName('');
-      setTime(new Date());
       navigation.navigate('HomeScreen');
     }
   };
 
-  const _handleTimeChange = newTime => {
+  const handleTimeChange = newTime => {
     setTime(newTime);
   };
 
@@ -57,7 +52,9 @@ const AddTask = ({ navigation }) => {
           />
         </View>
         <View className="flex-row justify-between items-center mt-4">
-          <Text className="text-2xl font-bold">Add new task</Text>
+          <Text className="text-2xl font-bold">
+            {day === 'today' ? 'Add new task' : 'Add new tomorrow task'}
+          </Text>
         </View>
         <View className="h-full max-h-80 w-full flex justify-content mt-4">
           <Text className="mt-4">Task name</Text>
@@ -70,7 +67,7 @@ const AddTask = ({ navigation }) => {
           </View>
           <Text className="mt-4">Time</Text>
           <View className="mt-4 w-full h-1/4">
-            <TimePicker time={time} onTimeChange={_handleTimeChange} />
+            <TimePicker time={time} onTimeChange={handleTimeChange} />
           </View>
           <Text className="mt-4">Note</Text>
           <View className="mt-4 bg-black w-full">
@@ -85,7 +82,7 @@ const AddTask = ({ navigation }) => {
               <PlusCircleIcon
                 color={colors.orange}
                 size="70"
-                onPress={_handleAddTask}
+                onPress={handleAddTask}
               ></PlusCircleIcon>
             </TouchableOpacity>
           </View>
