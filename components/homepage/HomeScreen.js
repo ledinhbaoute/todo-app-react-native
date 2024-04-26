@@ -2,15 +2,11 @@ import * as React from 'react';
 import { List, Checkbox } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
-import { createSelector } from '@reduxjs/toolkit';
-import { View, Text, Button, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import {
   fetchAllTasks,
-  updateTasks,
   setTaskStatus,
-  fetchAllTmrTasks,
-  updateTmrTasks,
-  setTmrTaskStatus,
+  tasksSelector,
 } from '../../redux/TasksSlice';
 
 import {
@@ -18,101 +14,84 @@ import {
   PlusCircleIcon,
 } from 'react-native-heroicons/solid';
 import { colors } from '../../theme/colors';
-import { formatTime } from '../../helper/TimeFormat';
+import { formatTime, isToday, isNextDay } from '../../helper/TimeFormat';
 
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
 
-  const tasksSelector = createSelector(
-    state => state.tasks,
-    tasks => {
-      return tasks.listTasks;
-    }
-  );
-
   const tasks = useSelector(tasksSelector);
 
-  const tmrTasksSelector = createSelector(
-    state => state.tasks,
-    tasks => {
-      return tasks.listTmrTasks;
-    }
-  );
-
-  const tmrTasks = useSelector(tmrTasksSelector);
-
   const markDoneTask = taskId => {
-    dispatch(setTaskStatus({ taskId, isToday: true }));
+    dispatch(setTaskStatus({ taskId }));
   };
 
-  const markDoneTmrTask = taskId => {
-    dispatch(setTaskStatus({ taskId, isToday: false }));
-  };
-
-  const handleClickTask = id => {
+  const gotoEditTask = id => {
     navigation.navigate('EditTask', {
       taskId: id,
     });
   };
 
-  const handleClickTmrTask = id => {
-    navigation.navigate('EditTmrTask', {
-      taskId: id,
+  const gotoAddTask = () => {
+    navigation.navigate('AddTask', {
+      day: 'today',
     });
   };
 
-  const handlePressAddTask = () => {
-    navigation.navigate('AddTask');
-  };
-
-  const handlePressAddTmrTask = () => {
-    navigation.navigate('AddTmrTask');
+  const gotoAddTmrTask = () => {
+    navigation.navigate('AddTask', {
+      day: 'tomorrow',
+    });
   };
 
   React.useEffect(() => {
     dispatch(fetchAllTasks());
-    dispatch(fetchAllTmrTasks());
   }, []);
 
-  const renderTasks = tasks.map(task => (
-    <List.Item
-      key={task.id}
-      title={() => (
-        <Text className={task.isDone === true && 'line-through'}>
-          {task.name}
-        </Text>
-      )}
-      right={() => <Text>{formatTime(new Date(task.time))}</Text>}
-      left={() => (
-        <Checkbox
-          status={task.isDone === true ? 'checked' : 'unchecked'}
-          color={colors.orange}
-          onPress={() => markDoneTask(task.id)}
+  const renderTasks = tasks.map(
+    task =>
+      isToday(task.time) && (
+        <List.Item
+          key={task.id}
+          title={() => (
+            <Text className={task.isDone === true && 'line-through'}>
+              {task.name}
+            </Text>
+          )}
+          right={() => <Text>{formatTime(new Date(task.time))}</Text>}
+          left={() => (
+            <Checkbox
+              status={task.isDone === true ? 'checked' : 'unchecked'}
+              color={colors.orange}
+              onPress={() => markDoneTask(task.id)}
+            />
+          )}
+          onPress={() => gotoEditTask(task.id)}
         />
-      )}
-      onPress={() => handleClickTask(task.id)}
-    />
-  ));
+      )
+  );
 
-  const renderTmrTasks = tmrTasks.map(task => (
-    <List.Item
-      key={task.id}
-      title={() => (
-        <Text className={task.isDone === true && 'line-through'}>
-          {task.name}
-        </Text>
-      )}
-      right={() => <Text>{formatTime(new Date(task.time))}</Text>}
-      left={() => (
-        <Checkbox
-          status={task.isDone === true ? 'checked' : 'unchecked'}
-          color={colors.orange}
-          onPress={() => markDoneTmrTask(task.id)}
+  const renderTmrTasks = tasks.map(
+    task =>
+      isNextDay(task.time) && (
+        <List.Item
+          key={task.id}
+          title={() => (
+            <Text className={task.isDone === true && 'line-through'}>
+              {task.name}
+            </Text>
+          )}
+          right={() => <Text>{formatTime(new Date(task.time))}</Text>}
+          left={() => (
+            <Checkbox
+              status={task.isDone === true ? 'checked' : 'unchecked'}
+              color={colors.orange}
+              onPress={() => markDoneTask(task.id)}
+            />
+          )}
+          onPress={() => gotoEditTask(task.id)}
         />
-      )}
-      onPress={() => handleClickTmrTask(task.id)}
-    />
-  ));
+      )
+  );
   return (
     <SafeAreaView>
       <View className="container px-3">
@@ -125,7 +104,7 @@ const HomeScreen = ({ navigation }) => {
             <PlusCircleIcon
               color={colors.orange}
               size="45"
-              onPress={handlePressAddTask}
+              onPress={gotoAddTask}
             ></PlusCircleIcon>
           </TouchableOpacity>
         </View>
@@ -138,7 +117,7 @@ const HomeScreen = ({ navigation }) => {
             <PlusCircleIcon
               color={colors.orange}
               size="45"
-              onPress={handlePressAddTmrTask}
+              onPress={gotoAddTmrTask}
             ></PlusCircleIcon>
           </TouchableOpacity>
         </View>
